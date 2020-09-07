@@ -19,8 +19,14 @@ bot.remove_command('help')
 
 @bot.event
 async def on_ready():
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="!ideas help"))
     get_ideas.start()
 
+
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound):
+        await ctx.send("```Command not found. Try !ideas help```")
 
 @bot.command()
 async def on(ctx):
