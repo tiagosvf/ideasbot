@@ -1,0 +1,4 @@
+pyyaml
+requests
+discord.py
+beautifulsoup4

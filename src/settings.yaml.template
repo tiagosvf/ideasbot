@@ -1,0 +1,4 @@
+discord:
+    token: DISCORD_BOT_TOKEN
+bot:
+    refresh_frequency: 5
