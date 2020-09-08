@@ -41,9 +41,8 @@ async def on(ctx):
 
 @bot.command()
 async def off(ctx):
-    if ctx.channel not in channel_list:
-        channel_list.append(ctx.channel)
-        await ctx.send("```This channel has been unsubscribed.```")
+    channel_list.remove(ctx.channel)
+    await ctx.send("```This channel has been unsubscribed.```")
 
 
 @bot.command(aliases=["commands", "help"])
