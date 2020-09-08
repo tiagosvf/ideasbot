@@ -1,4 +1,5 @@
 discord:
     token: DISCORD_BOT_TOKEN
 bot:
-    refresh_frequency: 5  # IN SECONDS
+    refresh_frequency: 10  # IN SECONDS
+    info_url: https://github.com/tiagosvf/ideasbot/
