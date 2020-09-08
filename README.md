@@ -9,7 +9,7 @@ Get new AI generated business ideas from IdeasAI.net straight to Discord!
 
 **Commands:**
 
-`!ideas help` > Show help message
-
-`!ideas on` > Activate bot in channel
-`!ideas off` > Deactivate bot in channel
+`!ideas help` › Show help message<br><br>
+`!ideas new` › Subscribe to new ideas<br>
+`!ideas top` › Subscribe to today's top ideas<br><br>
+`!ideas off` › Unsubscribe
