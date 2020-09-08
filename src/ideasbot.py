@@ -5,8 +5,27 @@ from bs4 import BeautifulSoup
 from discord.ext import commands, tasks
 
 URL = 'https://ideasai.net/'
-recent_ideas = []
-channel_list = []
+
+
+class Feed:
+    def __init__(self, description, header_index, color):
+        self.header_index = header_index
+        self.description = description
+        self.recent_ideas = []
+        self.channels = []
+        self.color = color
+
+    @staticmethod
+    def unsubscribe_from_feeds(feeds, channel):
+        for feed in feeds:
+            try:
+                feeds[feed].channels.remove(channel)
+            except ValueError:
+                pass
+
+
+feeds = {"new": Feed("new ideas", 0, 0xe5e900),
+         "top": Feed("today's top ideas", 1, 0xff4742)}
 
 with open("settings.yaml") as file:
     settings = yaml.load(file, Loader=yaml.FullLoader)
@@ -29,19 +48,28 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send("```Command not found. Try !ideas help```")
 
+
 @bot.command()
-async def on(ctx):
-    if ctx.channel not in channel_list:
-        channel_list.append(ctx.channel)
-        await ctx.send("```This channel is now subscribed. "
-                       "\nYou will now start receiving new ideas```")
+async def new(ctx):
+    if ctx.channel not in feeds["new"].channels:
+        feeds["new"].channels.append(ctx.channel)
+        await ctx.send("```This channel is now subscribed to new ideas.```")
     else:
-        await ctx.send("```This channel is already subscribed.```")
+        await ctx.send("```This channel is already subscribed to new ideas.```")
+
+
+@bot.command()
+async def top(ctx):
+    if ctx.channel not in feeds["top"].channels:
+        feeds["top"].channels.append(ctx.channel)
+        await ctx.send("```This channel is now subscribed to today's top ideas.```")
+    else:
+        await ctx.send("```This channel is already subscribed to today's top ideas.```")
 
 
 @bot.command()
 async def off(ctx):
-    channel_list.remove(ctx.channel)
+    Feed.unsubscribe_from_feeds(feeds, ctx.channel)
     await ctx.send("```This channel has been unsubscribed.```")
 
 
@@ -53,7 +81,9 @@ async def cmd(ctx):
     embed.add_field(name="Commands",
                     value="`!ideas help`, `!ideas cmd` or `!ideas commands` › Show this message"
                           "\n"
-                          "\n`!ideas on` › Subscribe to feed"
+                          "\n`!ideas new` › Subscribe to new ideas"
+                          "\n`!ideas top` › Subscribe to today's top ideas"
+                          "\n"
                           "\n`!ideas off` › Unsubscribe"
                           "\n\u200b")
     embed.set_footer(text="👨‍💻 by @tiagosvf, ⚡ by ideasai.net")
@@ -64,35 +94,38 @@ async def cmd(ctx):
 async def get_ideas():
     global recent_ideas
 
-    page = requests.get(URL)
+    page = requests.get(URL, timeout=10)
     soup = BeautifulSoup(page.content, 'html.parser')
 
-    elem = soup.findAll("h2", limit=1)[0]
+    elems = soup.findAll("h2")
 
-    while True:
-        elem = elem.next_sibling
+    for name, feed in feeds.items():
+        elem = elems[feed.header_index]
+        while True:
+            elem = elem.next_sibling
 
-        if elem.name == "table":
-            idea = elem.find(class_="idea")
-            text = idea.text.strip()
+            if elem.name == "table":
+                idea = elem.find(class_="idea")
+                text = idea.text.strip()
 
-            if text in recent_ideas:
+                if text in feed.recent_ideas:
+                    break
+
+                feed.recent_ideas.append(text)
+
+                if len(text) > 256:
+                    embed = discord.Embed(
+                        description=f"**{text}**", color=feed.color)
+                else:
+                    embed = discord.Embed(color=feed.color)
+                    embed.set_author(name=f"{text}", url=f"{URL}")
+
+                for channel in feed.channels:
+                    await channel.send(embed=embed)
+            elif elem.name == "h2":
                 break
 
-            recent_ideas.append(text)
+        feed.recent_ideas = feed.recent_ideas[-10:]
 
-            if len(text) > 256:
-                embed = discord.Embed(
-                    description=f"**{text}**", color=0xe5e900)
-            else:
-                embed = discord.Embed(color=0xe5e900)
-                embed.set_author(name=f"{text}", url=f"{URL}")
-
-            for channel in channel_list:
-                await channel.send(embed=embed)
-        elif elem.name == "h2":
-            break
-
-    recent_ideas = recent_ideas[-10:]
 
 bot.run(token)
