@@ -8,9 +8,8 @@ URL = 'https://ideasai.net/'
 
 
 class Feed:
-    def __init__(self, description, header_index, color):
-        self.header_index = header_index
-        self.description = description
+    def __init__(self, header_text, color):
+        self.header_text = header_text
         self.recent_ideas = []
         self.channels = []
         self.color = color
@@ -24,8 +23,9 @@ class Feed:
                 pass
 
 
-feeds = {"new": Feed("new ideas", 0, 0xe5e900),
-         "top": Feed("today's top ideas", 1, 0xff4742)}
+feeds = {"new": Feed("New ideas just in", 0xe5e900),
+         "top": Feed("Today's top ideas", 0xff4742)}
+
 
 with open("settings.yaml") as file:
     settings = yaml.load(file, Loader=yaml.FullLoader)
@@ -100,10 +100,11 @@ async def get_ideas():
     elems = soup.findAll("h2")
 
     for name, feed in feeds.items():
-        elem = elems[feed.header_index]
+        elem = [h for h in elems if feed.header_text in h.text][0]
+
         while True:
             elem = elem.next_sibling
-
+    
             if elem.name == "table":
                 idea = elem.find(class_="idea")
                 text = idea.text.strip()
