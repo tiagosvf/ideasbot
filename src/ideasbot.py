@@ -92,17 +92,17 @@ async def cmd(ctx):
 
 @tasks.loop(seconds=refresh_frequency)
 async def get_ideas():
-    global recent_ideas
-
     page = requests.get(URL, timeout=10)
     soup = BeautifulSoup(page.content, 'html.parser')
 
     elems = soup.findAll("h2")
 
     for name, feed in feeds.items():
-        elem = [h for h in elems if feed.header_text in h.text][0]
+        aux = [h for h in elems if feed.header_text in h.text]
 
-        while True:
+        elem = aux[0] if len(aux) > 0 else None
+
+        while elem:
             elem = elem.next_sibling
     
             if elem.name == "table":
