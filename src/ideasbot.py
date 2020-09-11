@@ -8,11 +8,12 @@ URL = 'https://ideasai.net/'
 
 
 class Feed:
-    def __init__(self, header_text, color):
+    def __init__(self, header_text, color, newest_position):
         self.header_text = header_text
         self.recent_ideas = []
         self.channels = []
         self.color = color
+        self.newest_position = newest_position  # Position of the newest idea
 
     @staticmethod
     def unsubscribe_from_feeds(feeds, channel):
@@ -23,8 +24,8 @@ class Feed:
                 pass
 
 
-feeds = {"new": Feed("New ideas just in", 0xe5e900),
-         "top": Feed("Today's top ideas", 0xff4742)}
+feeds = {"new": Feed("New ideas just in", 0xe5e900, "top"),
+         "top": Feed("Today's top ideas", 0xff4742, "bottom")}
 
 
 with open("settings.yaml") as file:
@@ -98,13 +99,16 @@ async def get_ideas():
     elems = soup.findAll("h2")
 
     for name, feed in feeds.items():
-        aux = [h for h in elems if feed.header_text in h.text]
+        elem = next(h for h in elems if feed.header_text in h.text)
 
-        elem = aux[0] if len(aux) > 0 else None
+        if elem and feed.newest_position == "bottom":
+            elem = elems[elems.index(elem)+1]
 
         while elem:
-            elem = elem.next_sibling
-    
+            elem = (elem.next_sibling
+                    if feed.newest_position == "top" else
+                    elem.previous_sibling)
+
             if elem.name == "table":
                 idea = elem.find(class_="idea")
                 text = idea.text.strip()
