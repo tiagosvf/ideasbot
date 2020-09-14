@@ -99,7 +99,10 @@ async def get_ideas():
     elems = soup.findAll("h2")
 
     for name, feed in feeds.items():
-        elem = next(h for h in elems if feed.header_text in h.text)
+        try:
+            elem = next(h for h in elems if feed.header_text in h.text)
+        except StopIteration:
+            continue
 
         if elem and feed.newest_position == "bottom":
             elem = elems[elems.index(elem)+1]
