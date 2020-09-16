@@ -1,10 +1,27 @@
 import yaml
 import discord
 import requests
+import asyncio
 from bs4 import BeautifulSoup
 from discord.ext import commands, tasks
+import threading
 
 URL = 'https://ideasai.net/'
+MAX_THREADS = 3
+current_threads = 0
+
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+
+def async_from_sync(function, *args, **kwargs):
+    """
+    Wrapper to allow calling async functions from sync
+    and running them in the main event loop
+    """
+
+    res = function(*args, **kwargs)
+    asyncio.run_coroutine_threadsafe(res, loop).result()
 
 
 class Feed:
@@ -41,7 +58,7 @@ bot.remove_command('help')
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="!ideas help"))
-    get_ideas.start()
+    get_ideas_task.start()
 
 
 @bot.event
@@ -91,8 +108,10 @@ async def cmd(ctx):
     await ctx.send(embed=embed)
 
 
-@tasks.loop(seconds=refresh_frequency)
-async def get_ideas():
+def get_ideas():
+    global current_threads
+    current_threads += 1
+
     page = requests.get(URL, timeout=10)
     soup = BeautifulSoup(page.content, 'html.parser')
 
@@ -129,11 +148,20 @@ async def get_ideas():
                     embed.set_author(name=f"{text}", url=f"{URL}")
 
                 for channel in feed.channels:
-                    await channel.send(embed=embed)
+                    async_from_sync(channel.send, embed=embed)
             elif elem.name == "h2":
                 break
 
         feed.recent_ideas = feed.recent_ideas[-10:]
+
+    current_threads -= 1
+
+
+@tasks.loop(seconds=refresh_frequency)
+async def get_ideas_task():
+    if current_threads < MAX_THREADS:
+        get_ideas_thread = threading.Thread(target=get_ideas, name="Getter")
+        get_ideas_thread.start()
 
 
 bot.run(token)
