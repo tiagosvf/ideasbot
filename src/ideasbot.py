@@ -109,52 +109,55 @@ async def cmd(ctx):
 
 
 def get_ideas():
-    global current_threads
-    current_threads += 1
+    try:
+        global current_threads
+        current_threads += 1
 
-    page = requests.get(URL, timeout=10)
-    soup = BeautifulSoup(page.content, 'html.parser')
+        page = requests.get(URL, timeout=10)
+        soup = BeautifulSoup(page.content, 'html.parser')
 
-    elems = soup.findAll("h2")
+        elems = soup.findAll("h2")
 
-    for name, feed in feeds.items():
-        try:
-            elem = next(h for h in elems if feed.header_text in h.text)
-        except StopIteration:
-            continue
+        for name, feed in feeds.items():
+            try:
+                elem = next(h for h in elems if feed.header_text in h.text)
+            except StopIteration:
+                continue
 
-        if elem and feed.newest_position == "bottom":
-            elem = elems[elems.index(elem)+1]
+            if elem and feed.newest_position == "bottom":
+                elem = elems[elems.index(elem)+1]
 
-        while elem:
-            elem = (elem.next_sibling
-                    if feed.newest_position == "top" else
-                    elem.previous_sibling)
+            while elem:
+                elem = (elem.next_sibling
+                        if feed.newest_position == "top" else
+                        elem.previous_sibling)
 
-            if elem.name == "table":
-                idea = elem.find(class_="idea")
-                text = idea.text.strip()
+                if elem.name == "table":
+                    idea = elem.find(class_="idea")
+                    text = idea.text.strip()
 
-                if text in feed.recent_ideas:
+                    if text in feed.recent_ideas:
+                        break
+
+                    feed.recent_ideas.append(text)
+
+                    if len(text) > 256:
+                        embed = discord.Embed(
+                            description=f"**{text}**", color=feed.color)
+                    else:
+                        embed = discord.Embed(color=feed.color)
+                        embed.set_author(name=f"{text}", url=f"{URL}")
+
+                    for channel in feed.channels:
+                        async_from_sync(channel.send, embed=embed)
+                elif elem.name == "h2":
                     break
 
-                feed.recent_ideas.append(text)
+            feed.recent_ideas = feed.recent_ideas[-10:]
 
-                if len(text) > 256:
-                    embed = discord.Embed(
-                        description=f"**{text}**", color=feed.color)
-                else:
-                    embed = discord.Embed(color=feed.color)
-                    embed.set_author(name=f"{text}", url=f"{URL}")
-
-                for channel in feed.channels:
-                    async_from_sync(channel.send, embed=embed)
-            elif elem.name == "h2":
-                break
-
-        feed.recent_ideas = feed.recent_ideas[-10:]
-
-    current_threads -= 1
+        current_threads -= 1
+    except requests.exceptions.ReadTimeout:
+        pass
 
 
 @tasks.loop(seconds=refresh_frequency)
