@@ -99,8 +99,8 @@ async def cmd(ctx):
     embed.add_field(name="Commands",
                     value="`!ideas help`, `!ideas cmd` or `!ideas commands` › Show this message"
                           "\n"
-                          "\n`!ideas new` › Subscribe to new ideas"
-                          "\n`!ideas top` › Subscribe to today's top ideas"
+                          "\n`!ideas new` › Subscribe to\u2004🔔\u2004new ideas"
+                          "\n`!ideas top` › Subscribe to\u2004❤️\u2004today's top ideas"
                           "\n"
                           "\n`!ideas off` › Unsubscribe"
                           "\n\u200b")
