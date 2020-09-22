@@ -1,3 +1,4 @@
+import os
 import yaml
 import discord
 import requests
@@ -24,6 +25,10 @@ def async_from_sync(function, *args, **kwargs):
     asyncio.run_coroutine_threadsafe(res, loop).result()
 
 
+def file_path(filename):
+    return os.path.join(os.path.dirname(__file__), filename)
+
+
 class Feed:
     def __init__(self, header_text, color, newest_position):
         self.header_text = header_text
@@ -45,7 +50,7 @@ feeds = {"new": Feed("New ideas just in", 0xe5e900, "top"),
          "top": Feed("Today's top ideas", 0xff4742, "bottom")}
 
 
-with open("settings.yaml") as file:
+with open(file_path("settings.yaml")) as file:
     settings = yaml.load(file, Loader=yaml.FullLoader)
     token = settings["discord"]["token"]
     refresh_frequency = settings["bot"]["refresh_frequency"]
@@ -167,4 +172,9 @@ async def get_ideas_task():
         get_ideas_thread.start()
 
 
-bot.run(token)
+def main():
+    bot.run(token)
+
+
+if __name__ == "__main__":
+    main()
