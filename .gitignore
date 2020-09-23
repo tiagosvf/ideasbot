@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 #VSCode
-ideasbot/.vscode/settings.json
+.vscode/settings.json
 
 #Settings
 ideasbot/settings.yaml

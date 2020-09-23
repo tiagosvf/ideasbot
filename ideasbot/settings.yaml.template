@@ -1,3 +1,5 @@
+# EDIT AND RENAME TO 'settings.yaml'
+
 discord:
     token: DISCORD_BOT_TOKEN
 bot:
