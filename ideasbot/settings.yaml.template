@@ -5,3 +5,6 @@ discord:
 bot:
     refresh_frequency: 10  # IN SECONDS
     info_url: https://github.com/tiagosvf/ideasbot/
+jsonbin:  # https://jsonbin.io
+    bin-url: YOUR BIN ID
+    secret-key: YOUR API SECRET KEY  # https://jsonbin.io/api-keys

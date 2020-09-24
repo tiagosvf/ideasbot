@@ -3,12 +3,15 @@ import yaml
 import discord
 import requests
 import asyncio
+import data
+import json
 from bs4 import BeautifulSoup
 from discord.ext import commands, tasks
 import threading
 
 URL = 'https://ideasai.net/'
 MAX_THREADS = 3
+initialized = False
 current_threads = 0
 
 loop = asyncio.new_event_loop()
@@ -45,6 +48,38 @@ class Feed:
             except ValueError:
                 pass
 
+    @staticmethod
+    def read_subscriptions():
+        try:
+            json_s = data.read()
+            data_s = json.loads(json_s)
+            for f in data_s['feeds']:
+                feed = feeds.get(f['name'])
+                for channel in f['channels']:
+                    id = int(channel['id'])
+                    channel = bot.get_channel(id)
+                    if channel:
+                        feed.channels.append(channel)
+        except KeyError:
+            pass
+
+    async def get_feed_channels(self):
+        data_list = []
+        for channel in self.channels:
+            data_list.append({'id': f"{channel.id}"})
+            await asyncio.sleep(0.01)
+        return data_list
+
+    @staticmethod
+    async def save_subscriptions():
+        data_s = {}
+        data_s['feeds'] = []
+        for name, feed in feeds.items():
+            channels = await feed.get_feed_channels()
+            data_s["feeds"].append({'name': name, 'channels': channels})
+            await asyncio.sleep(0.01)
+        data.save(data_s)
+
 
 feeds = {"new": Feed("New ideas just in", 0xe5e900, "top"),
          "top": Feed("Today's top ideas", 0xff4742, "bottom")}
@@ -59,6 +94,13 @@ with open(file_path("settings.yaml")) as file:
 bot = commands.Bot(command_prefix='!ideas ')
 bot.remove_command('help')
 
+
+@bot.event
+async def on_connect():
+    global initialized
+    if not initialized:
+        Feed.read_subscriptions()
+        initialized = True
 
 @bot.event
 async def on_ready():
@@ -76,6 +118,7 @@ async def on_command_error(ctx, error):
 async def new(ctx):
     if ctx.channel not in feeds["new"].channels:
         feeds["new"].channels.append(ctx.channel)
+        await Feed.save_subscriptions()
         await ctx.send("```This channel is now subscribed to new ideas.```")
     else:
         await ctx.send("```This channel is already subscribed to new ideas.```")
@@ -85,6 +128,7 @@ async def new(ctx):
 async def top(ctx):
     if ctx.channel not in feeds["top"].channels:
         feeds["top"].channels.append(ctx.channel)
+        await Feed.save_subscriptions()
         await ctx.send("```This channel is now subscribed to today's top ideas.```")
     else:
         await ctx.send("```This channel is already subscribed to today's top ideas.```")
@@ -93,6 +137,7 @@ async def top(ctx):
 @bot.command()
 async def off(ctx):
     Feed.unsubscribe_from_feeds(feeds, ctx.channel)
+    await Feed.save_subscriptions()
     await ctx.send("```This channel has been unsubscribed.```")
 
 
