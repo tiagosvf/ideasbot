@@ -10,14 +10,14 @@ jsonbin = {"bin-id": None, "secret-key": None}
 current_threads = 0
 
 with open(os.path.join(os.path.dirname(__file__), "settings.yaml")) as file:
-    settings = yaml.load(file, Loader=yaml.FullLoader)
+    settings = yaml.safe_load(file)
     jsonbin["bin-id"] = settings["jsonbin"]["bin-id"]
     jsonbin["secret-key"] = settings["jsonbin"]["secret-key"]
 
 
 def __save(json_data):
     global current_threads
-    for i in range(3):  # Tries 3 times
+    for _ in range(3):  # Tries 3 times
         try:
             current_threads += 1
 
@@ -48,7 +48,7 @@ def save(json_data):
 
 
 def read():
-    for i in range(3):  # Tries 3 times
+    for _ in range(3):  # Tries 3 times
         try:
             bin_id = jsonbin.get("bin-id")
             url = f"https://api.jsonbin.io/b/{bin_id}"

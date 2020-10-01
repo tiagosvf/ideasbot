@@ -86,7 +86,7 @@ feeds = {"new": Feed("New ideas just in", 0xe5e900, "top"),
 
 
 with open(file_path("settings.yaml")) as file:
-    settings = yaml.load(file, Loader=yaml.FullLoader)
+    settings = yaml.safe_load(file)
     token = settings["discord"]["token"]
     refresh_frequency = settings["bot"]["refresh_frequency"]
     info_url = settings["bot"]["info_url"]
@@ -168,7 +168,8 @@ def get_ideas():
 
         elems = soup.findAll("h2")
 
-        for name, feed in feeds.items():
+        for feed_ in feeds:
+            feed = feeds[feed_]
             try:
                 elem = next(h for h in elems if feed.header_text in h.text)
             except StopIteration:
